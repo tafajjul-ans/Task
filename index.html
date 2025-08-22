@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Auto-Update Demo App</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background: #f2f2f2;
+      padding: 20px;
+    }
+    #tasks { margin-top: 20px; }
+    .task {
+      background: #fff;
+      padding: 10px;
+      margin-bottom: 5px;
+      border-radius: 6px;
+      box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+    }
+    #updatePrompt {
+      position: fixed;
+      bottom: 15px;
+      left: 15px;
+      background: #141308;
+      color: white;
+      padding: 10px 15px;
+      border-radius: 8px;
+      display: none;
+      cursor: pointer;
+    }
+  </style>
+</head>
+<body>
+  <h1>📋 My Tasks</h1>
+  <input type="text" id="taskInput" placeholder="Enter a task">
+  <button id="addTask">Add</button>
+
+  <div id="tasks"></div>
+
+  <div id="updatePrompt">🔄 New version available — Refresh</div>
+
+  <script>
+    // ========== LOCAL STORAGE LOGIC ==========
+    const taskInput = document.getElementById("taskInput");
+    const addTaskBtn = document.getElementById("addTask");
+    const tasksDiv = document.getElementById("tasks");
+
+    function loadTasks() {
+      tasksDiv.innerHTML = "";
+      const tasks = JSON.parse(localStorage.getItem("tasks") || "[]");
+      tasks.forEach((t, i) => {
+        const div = document.createElement("div");
+        div.className = "task";
+        div.textContent = t;
+        tasksDiv.appendChild(div);
+      });
+    }
+
+    function saveTask() {
+      const value = taskInput.value.trim();
+      if (!value) return;
+      const tasks = JSON.parse(localStorage.getItem("tasks") || "[]");
+      tasks.push(value);
+      localStorage.setItem("tasks", JSON.stringify(tasks));
+      taskInput.value = "";
+      loadTasks();
+    }
+
+    addTaskBtn.addEventListener("click", saveTask);
+    window.addEventListener("load", loadTasks);
+
+    // ========== VERSION CHECK LOGIC ==========
+    const CURRENT_VERSION = "v1.0.1"; // <-- ise deploy/update pe badal do
+
+    async function checkVersion() {
+      try {
+        const res = await fetch("version.json?cache=" + Date.now(), { cache: "no-store" });
+        const { version } = await res.json();
+
+        if (version !== CURRENT_VERSION) {
+          document.getElementById("updatePrompt").style.display = "block";
+          document.getElementById("updatePrompt").onclick = () => {
+            location.reload(true);
+          };
+        }
+      } catch (e) {
+        console.log("Version check failed:", e);
+      }
+    }
+
+    setInterval(checkVersion, 3000); // 3 sec demo ke liye
+    checkVersion();
+  </script>
+</body>
+</html>
